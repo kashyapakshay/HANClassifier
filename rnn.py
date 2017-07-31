@@ -10,25 +10,36 @@ from keras.datasets import imdb, reuters
 
 from utils import *
 
-def attention(inputs, ATTENTION_SIZE):
+def make_rfp_dataset():
+    paragraphs = load(open('data/new_paragraphs_with_sentences_with_labels.json', 'r'))
+    filenames = ['data/html/RFPs/Cleansed/Greengoat/Greengoat  IT Managed Services RFP 2016.html']
+
+    for filename in filenames:
+        print '===== %s =====\n' % filename
+
+        for para in paragraphs[filename]:
+            for sentence in para['paragraph']:
+                yield filename, sentence
+
+def attention(inputs, attention_size):
     # Concatenate Bi-RNN outputs.
     inputs = tf.concat(inputs, 2)
 
     inputs_shape = inputs.shape
     sequence_length = inputs_shape[1].value
-    HIDDEN_SIZE = inputs_shape[2].value # Usually HIDDEN_SIZE * 2, because of bi-directional
+    hidden_size = inputs_shape[2].value # Usually HIDDEN_SIZE * 2, because of bi-directional
 
     # Attention mechanism
-    W_w = tf.Variable(tf.truncated_normal([HIDDEN_SIZE, ATTENTION_SIZE], stddev=0.1))
-    b_w = tf.Variable(tf.truncated_normal([ATTENTION_SIZE], stddev=0.1))
-    u_w = tf.Variable(tf.truncated_normal([ATTENTION_SIZE], stddev=0.1))
+    W_w = tf.Variable(tf.truncated_normal([hidden_size, attention_size], stddev=0.1))
+    b_w = tf.Variable(tf.truncated_normal([attention_size], stddev=0.1))
+    u_w = tf.Variable(tf.truncated_normal([attention_size], stddev=0.1))
 
-    v = tf.tanh(tf.matmul(tf.reshape(inputs, [-1, HIDDEN_SIZE]), W_w) + b_w)
+    v = tf.tanh(tf.matmul(tf.reshape(inputs, [-1, hidden_size]), W_w) + b_w)
     v_u = tf.matmul(v, tf.reshape(u_w, [-1, 1]))
     exps = tf.reshape(tf.exp(v_u), [-1, sequence_length])
     alphas = exps / tf.reshape(tf.reduce_sum(exps, 1), [-1, 1])
 
-    # Weigh by attention vector
+    # Weigh by alphas
     output = tf.reduce_sum(inputs * tf.reshape(alphas, [-1, sequence_length, 1]), 1)
 
     return output
@@ -43,7 +54,7 @@ N_CLASSES = 46
 VOCAB_SIZE = get_vocabulary_size(x_train)
 ATTENTION_SIZE = 50
 HIDDEN_SIZE = 100
-EPOCHS = 5
+EPOCHS = 10
 
 x_train = pad_sequences(x_train, MAX_LEN)
 x_test = pad_sequences(x_test, MAX_LEN)
