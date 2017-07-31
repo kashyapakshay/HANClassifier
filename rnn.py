@@ -14,17 +14,20 @@ def attention(inputs, attention_size):
     # Concatenate Bi-RNN outputs.
     inputs = tf.concat(inputs, 2)
 
-    inputs_shape = inputs.shape
-    sequence_length = inputs_shape[1].value
-    hidden_size = inputs_shape[2].value # Usually HIDDEN_SIZE * 2, because of bi-directional
+    inputs_shape = inputs.get_shape().as_list()
+
+    sequences = inputs_shape[0]
+    sequence_length = inputs_shape[1]
+    hidden_size = inputs_shape[2] # Usually HIDDEN_SIZE * 2, because of bi-directional
 
     # Attention mechanism
     W_w = tf.Variable(tf.truncated_normal([hidden_size, attention_size], stddev=0.1))
     b_w = tf.Variable(tf.truncated_normal([attention_size], stddev=0.1))
+
     u_w = tf.Variable(tf.truncated_normal([attention_size], stddev=0.1))
 
-    v = tf.tanh(tf.matmul(tf.reshape(inputs, [-1, hidden_size]), W_w) + b_w)
-    v_u = tf.matmul(v, tf.reshape(u_w, [-1, 1]))
+    u_it = tf.tanh(tf.matmul(tf.reshape(inputs, [-1, hidden_size]), W_w) + b_w)
+    v_u = tf.matmul(u_it, tf.reshape(u_w, [-1, 1]))
     exps = tf.reshape(tf.exp(v_u), [-1, sequence_length])
     alphas = exps / tf.reshape(tf.reduce_sum(exps, 1), [-1, 1])
 
@@ -38,12 +41,15 @@ def attention(inputs, attention_size):
 
 # ----- Pre-process -----
 # MAX_LEN = max(len(max(x_train, key=len)), len(max(x_test, key=len)))
-MAX_LEN = 200
+MAX_LEN = 10
 N_CLASSES = 46
 VOCAB_SIZE = get_vocabulary_size(x_train)
-ATTENTION_SIZE = 50
-HIDDEN_SIZE = 100
+
+ATTENTION_SIZE = 100
+HIDDEN_SIZE = 50
+
 EPOCHS = 10
+BATCH_SIZE = 64
 
 x_train = pad_sequences(x_train, MAX_LEN)
 x_test = pad_sequences(x_test, MAX_LEN)
@@ -115,8 +121,7 @@ with tf.Session() as sess:
     print 'Training...\n'
 
     total_size = len(x_train)
-    batch_size = 100
-    n_batches = total_size / batch_size
+    n_batches = total_size / BATCH_SIZE
 
     for epoch in range(EPOCHS):
         print '=== Epoch %d ===\n' % epoch
