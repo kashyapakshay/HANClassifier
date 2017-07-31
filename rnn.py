@@ -116,8 +116,6 @@ with tf.Session() as sess:
 
             sess.run(trainer, feed_dict={x: x_batch, y_: y_batch})
 
-            print
-
     print
     print 'Loss: ', sess.run(loss, feed_dict={x: x_test, y_: y_test})
     print 'Accuracy: ', sess.run(accuracy, feed_dict={x: x_test, y_: y_test})
