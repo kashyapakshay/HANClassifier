@@ -82,7 +82,7 @@ else:
     W = tf.Variable(tf.zeros([out_shape[2] * out_shape[1], N_CLASSES]))
     b = tf.Variable(tf.zeros([N_CLASSES]))
 
-    y = tf.matmul(tf.reshape(outputs, [-1, out_shape[2] * out_shape[1]]), W) + b
+    y = tf.nn.softmax(tf.matmul(tf.reshape(outputs, [-1, out_shape[2] * out_shape[1]]), W) + b)
 
 # loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y))
 loss = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]))
