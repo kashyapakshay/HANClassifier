@@ -1,35 +1,12 @@
-import random
-
 import numpy as np
 
 import tensorflow as tf
 from tensorflow.contrib.rnn import GRUCell
-from tensorflow.python.ops.rnn import dynamic_rnn
-from tensorflow.python.ops.rnn import bidirectional_dynamic_rnn as bi_rnn
+from tensorflow.python.ops.rnn import dynamic_rnn, bidirectional_dynamic_rnn
 
 from keras.datasets import imdb, reuters
 
-def pad_sequences(sequences, padded_len):
-    return np.array([zero_pad(sequence, padded_len) for sequence in sequences])
-
-def zero_pad(arr, padded_len):
-    if padded_len < len(arr):
-        return np.array(arr[:padded_len])
-
-    return np.array(arr + ([0] * (padded_len - len(arr))), dtype='f')
-
-def gen_batch(x, y, n_seq):
-    indices = random.sample(range(len(x)), n_seq)
-    return x[indices], y[indices]
-
-def one_hot(n, dim):
-    vec = [0] * dim
-    vec[n] = 1
-
-    return np.array(vec, dtype='f')
-
-def get_vocabulary_size(X):
-    return max([max(x) for x in X]) + 1
+from utils import *
 
 def attention(inputs, attention_size):
     # Concatenate Bi-RNN outputs.
@@ -91,7 +68,11 @@ rnn_cell = GRUCell(hidden_size)
 # ----- With Attention -----
 
 # Bi-Directional GRU Cells
-outputs, states = bi_rnn(GRUCell(hidden_size), GRUCell(hidden_size), inputs=batch_embedded, dtype=tf.float32)
+outputs, states = bidirectional_dynamic_rnn(
+    GRUCell(hidden_size),
+    GRUCell(hidden_size),
+    inputs=batch_embedded, dtype=tf.float32
+)
 
 # + Attention Layer +
 attention_out = attention(outputs, attention_size)
