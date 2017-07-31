@@ -55,11 +55,9 @@ y_ = tf.placeholder(tf.float32, [None, N_CLASSES])
 embeddings_var = tf.Variable(tf.random_uniform([vocabulary_size, 200], -1.0, 1.0), trainable=True)
 batch_embedded = tf.nn.embedding_lookup(embeddings_var, x)
 
-rnn_cell = GRUCell(hidden_size)
-
 # ----- Without Attention -----
 
-# outputs, states = dynamic_rnn(rnn_cell, inputs=batch_embedded, dtype=tf.float32)
+# outputs, states = dynamic_rnn(GRUCell(hidden_size), inputs=batch_embedded, dtype=tf.float32)
 # W = tf.Variable(tf.zeros([outputs.get_shape()[2].value * outputs.get_shape()[1].value, N_CLASSES]))
 # b = tf.Variable(tf.zeros([N_CLASSES]))
 #
@@ -81,6 +79,8 @@ W = tf.Variable(tf.zeros([attention_out.get_shape()[1].value, N_CLASSES]))
 b = tf.Variable(tf.zeros([N_CLASSES]))
 
 y = tf.nn.softmax(tf.matmul(attention_out, W) + b)
+
+#  ----------
 
 # loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y))
 loss = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]))
