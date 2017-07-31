@@ -77,10 +77,12 @@ if len(sys.argv) > 1 and sys.argv[1] == '--attention':
 # ----- Without Attention -----
 else:
     outputs, states = dynamic_rnn(GRUCell(hidden_size), inputs=batch_embedded, dtype=tf.float32)
-    W = tf.Variable(tf.zeros([MAX_LEN * hidden_size, N_CLASSES]))
+    out_shape = outputs.get_shape().as_list()
+
+    W = tf.Variable(tf.zeros([out_shape[2] * out_shape[1], N_CLASSES]))
     b = tf.Variable(tf.zeros([N_CLASSES]))
 
-    y = tf.matmul(tf.reshape(outputs, [-1, MAX_LEN * hidden_size]), W) + b
+    y = tf.matmul(tf.reshape(outputs, [-1, out_shape[2] * out_shape[1]]), W) + b
 
 # loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y))
 loss = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]))
