@@ -41,14 +41,14 @@ def attention(inputs, attention_size):
 
 # ----- Pre-process -----
 # MAX_LEN = max(len(max(x_train, key=len)), len(max(x_test, key=len)))
-MAX_LEN = 10
+MAX_LEN = 20
 N_CLASSES = 46
 VOCAB_SIZE = get_vocabulary_size(x_train)
 
 ATTENTION_SIZE = 100
 HIDDEN_SIZE = 50
 
-EPOCHS = 10
+EPOCHS = 3
 BATCH_SIZE = 64
 
 x_train = pad_sequences(x_train, MAX_LEN)
@@ -81,10 +81,15 @@ if len(sys.argv) > 1 and sys.argv[1] == '--attention':
 
     out_shape = attention_out.get_shape().as_list()
 
-    W = tf.Variable(tf.zeros([out_shape[1], N_CLASSES]))
-    b = tf.Variable(tf.zeros([N_CLASSES]))
+    W_fc1 = tf.Variable(tf.truncated_normal([out_shape[1], 200], stddev=0.1))
+    b_fc1 = tf.Variable(tf.truncated_normal([200], stddev=0.1))
 
-    y = tf.nn.softmax(tf.matmul(attention_out, W) + b)
+    y_fc1 = tf.nn.relu(tf.matmul(attention_out, W_fc1) + b_fc1)
+
+    W = tf.Variable(tf.truncated_normal([200, N_CLASSES], stddev=0.1))
+    b = tf.Variable(tf.truncated_normal([N_CLASSES], stddev=0.1))
+
+    y = tf.nn.softmax(tf.matmul(y_fc1, W) + b)
 
 # ----- Without Attention -----
 else:
@@ -96,10 +101,15 @@ else:
 
     out_shape = outputs.get_shape().as_list()
 
-    W = tf.Variable(tf.zeros([out_shape[2] * out_shape[1], N_CLASSES]))
+    W_fc1 = tf.Variable(tf.truncated_normal([out_shape[2] * out_shape[1], 200], stddev=0.1))
+    b_fc1 = tf.Variable(tf.truncated_normal([200], stddev=0.1))
+
+    y_fc1 = tf.nn.relu(tf.matmul(tf.reshape(outputs, [-1, out_shape[2] * out_shape[1]]), W_fc1) + b_fc1)
+
+    W = tf.Variable(tf.zeros([200, N_CLASSES]))
     b = tf.Variable(tf.zeros([N_CLASSES]))
 
-    y = tf.nn.softmax(tf.matmul(tf.reshape(outputs, [-1, out_shape[2] * out_shape[1]]), W) + b)
+    y = tf.nn.softmax(tf.matmul(y_fc1, W) + b)
 
 # ----------
 
