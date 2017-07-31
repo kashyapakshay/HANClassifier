@@ -99,11 +99,10 @@ with tf.Session() as sess:
 
     total_size = len(x_train)
     batch_size = 100
+    n_batches = total_size / batch_size
 
-    for epoch in range(5):
+    for epoch in range(10):
         print '=== Epoch %d ===\n' % epoch
-
-        n_batches = total_size / batch_size
 
         for i_batch in range(n_batches):
             start_index = i_batch * batch_size
@@ -115,6 +114,8 @@ with tf.Session() as sess:
                 print 'Batch %d | Loss: %f' % (i_batch, sess.run(loss, feed_dict={x: x_batch, y_: y_batch}))
 
             sess.run(trainer, feed_dict={x: x_batch, y_: y_batch})
+
+        print
 
     print
     print 'Loss: ', sess.run(loss, feed_dict={x: x_test, y_: y_test})
