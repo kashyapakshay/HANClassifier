@@ -10,20 +10,20 @@ from keras.datasets import imdb, reuters
 
 from utils import *
 
-def attention(inputs, attention_size):
+def attention(inputs, ATTENTION_SIZE):
     # Concatenate Bi-RNN outputs.
     inputs = tf.concat(inputs, 2)
 
     inputs_shape = inputs.shape
     sequence_length = inputs_shape[1].value
-    hidden_size = inputs_shape[2].value # Usually hidden_size * 2, because of bi-directional
+    HIDDEN_SIZE = inputs_shape[2].value # Usually HIDDEN_SIZE * 2, because of bi-directional
 
     # Attention mechanism
-    W_w = tf.Variable(tf.truncated_normal([hidden_size, attention_size], stddev=0.1))
-    b_w = tf.Variable(tf.truncated_normal([attention_size], stddev=0.1))
-    u_w = tf.Variable(tf.truncated_normal([attention_size], stddev=0.1))
+    W_w = tf.Variable(tf.truncated_normal([HIDDEN_SIZE, ATTENTION_SIZE], stddev=0.1))
+    b_w = tf.Variable(tf.truncated_normal([ATTENTION_SIZE], stddev=0.1))
+    u_w = tf.Variable(tf.truncated_normal([ATTENTION_SIZE], stddev=0.1))
 
-    v = tf.tanh(tf.matmul(tf.reshape(inputs, [-1, hidden_size]), W_w) + b_w)
+    v = tf.tanh(tf.matmul(tf.reshape(inputs, [-1, HIDDEN_SIZE]), W_w) + b_w)
     v_u = tf.matmul(v, tf.reshape(u_w, [-1, 1]))
     exps = tf.reshape(tf.exp(v_u), [-1, sequence_length])
     alphas = exps / tf.reshape(tf.reduce_sum(exps, 1), [-1, 1])
@@ -40,9 +40,9 @@ def attention(inputs, attention_size):
 # MAX_LEN = max(len(max(x_train, key=len)), len(max(x_test, key=len)))
 MAX_LEN = 10
 N_CLASSES = 46
-vocabulary_size = get_vocabulary_size(x_train)
-attention_size = 50
-hidden_size = 100
+VOCAB_SIZE = get_vocabulary_size(x_train)
+ATTENTION_SIZE = 50
+HIDDEN_SIZE = 100
 
 x_train = pad_sequences(x_train, MAX_LEN)
 x_test = pad_sequences(x_test, MAX_LEN)
@@ -54,20 +54,20 @@ y_ = tf.placeholder(tf.float32, [None, N_CLASSES])
 
 # Embedding Layer
 # TODO: Switch to pre-trained embeddings
-embeddings_var = tf.Variable(tf.random_uniform([vocabulary_size, 200], -1.0, 1.0), trainable=True)
+embeddings_var = tf.Variable(tf.random_uniform([VOCAB_SIZE, 200], -1.0, 1.0), trainable=True)
 batch_embedded = tf.nn.embedding_lookup(embeddings_var, x)
 
 # ----- With Attention -----
 if len(sys.argv) > 1 and sys.argv[1] == '--attention':
     # Bi-Directional GRU Cells
     outputs, states = bidirectional_dynamic_rnn(
-        GRUCell(hidden_size),
-        GRUCell(hidden_size),
+        GRUCell(HIDDEN_SIZE),
+        GRUCell(HIDDEN_SIZE),
         inputs=batch_embedded, dtype=tf.float32
     )
 
     # + Attention Layer +
-    attention_out = attention(outputs, attention_size)
+    attention_out = attention(outputs, ATTENTION_SIZE)
 
     W = tf.Variable(tf.zeros([attention_out.get_shape()[1].value, N_CLASSES]))
     b = tf.Variable(tf.zeros([N_CLASSES]))
@@ -76,7 +76,7 @@ if len(sys.argv) > 1 and sys.argv[1] == '--attention':
 
 # ----- Without Attention -----
 else:
-    outputs, states = dynamic_rnn(GRUCell(hidden_size), inputs=batch_embedded, dtype=tf.float32)
+    outputs, states = dynamic_rnn(GRUCell(HIDDEN_SIZE), inputs=batch_embedded, dtype=tf.float32)
     out_shape = outputs.get_shape().as_list()
 
     W = tf.Variable(tf.zeros([out_shape[2] * out_shape[1], N_CLASSES]))
@@ -97,13 +97,28 @@ with tf.Session() as sess:
     # print sess.run(outputs.get_shape(), feed_dict={x: x_train})
     print 'Training...\n'
 
-    for i in range(1000):
-        x_batch, y_batch = gen_batch(x_train, y_train, 100)
+    total_size = len(x_train)
+    batch_size = 100
 
-        if i % 100 == 0:
-            print '%d Loss: %f' % (i, sess.run(loss, feed_dict={x: x_batch, y_: y_batch}))
+    for epoch in range(5):
+        print '=== Epoch %d ===\n' % epoch
 
-        sess.run(trainer, feed_dict={x: x_batch, y_: y_batch})
+        n_batches = total_size / batch_size
+
+        for i_batch in range(n_batches):
+            print 'Batch %d\n' % i_batch
+
+            start_index = i_batch * batch_size
+            end_index = start_index + batch_size
+
+            x_batch, y_batch = x_train[start_index: end_index], y_train[start_index: end_index]
+
+            if i_batch % 10 == 0:
+                print '%d Loss: %f' % (i, sess.run(loss, feed_dict={x: x_batch, y_: y_batch}))
+
+            sess.run(trainer, feed_dict={x: x_batch, y_: y_batch})
+
+            print
 
     print
     print 'Loss: ', sess.run(loss, feed_dict={x: x_test, y_: y_test})
