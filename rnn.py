@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 
 import tensorflow as tf
@@ -55,32 +57,30 @@ y_ = tf.placeholder(tf.float32, [None, N_CLASSES])
 embeddings_var = tf.Variable(tf.random_uniform([vocabulary_size, 200], -1.0, 1.0), trainable=True)
 batch_embedded = tf.nn.embedding_lookup(embeddings_var, x)
 
-# ----- Without Attention -----
-
-# outputs, states = dynamic_rnn(GRUCell(hidden_size), inputs=batch_embedded, dtype=tf.float32)
-# W = tf.Variable(tf.zeros([outputs.get_shape()[2].value * outputs.get_shape()[1].value, N_CLASSES]))
-# b = tf.Variable(tf.zeros([N_CLASSES]))
-#
-# y = tf.matmul(tf.reshape(outputs, [-1, outputs.get_shape()[2].value * outputs.get_shape()[1].value]), W) + b
-
 # ----- With Attention -----
+if len(sys.argv) > 1 and sys.argv[1] == '--attention':
+    # Bi-Directional GRU Cells
+    outputs, states = bidirectional_dynamic_rnn(
+        GRUCell(hidden_size),
+        GRUCell(hidden_size),
+        inputs=batch_embedded, dtype=tf.float32
+    )
 
-# Bi-Directional GRU Cells
-outputs, states = bidirectional_dynamic_rnn(
-    GRUCell(hidden_size),
-    GRUCell(hidden_size),
-    inputs=batch_embedded, dtype=tf.float32
-)
+    # + Attention Layer +
+    attention_out = attention(outputs, attention_size)
 
-# + Attention Layer +
-attention_out = attention(outputs, attention_size)
+    W = tf.Variable(tf.zeros([attention_out.get_shape()[1].value, N_CLASSES]))
+    b = tf.Variable(tf.zeros([N_CLASSES]))
 
-W = tf.Variable(tf.zeros([attention_out.get_shape()[1].value, N_CLASSES]))
-b = tf.Variable(tf.zeros([N_CLASSES]))
+    y = tf.nn.softmax(tf.matmul(attention_out, W) + b)
 
-y = tf.nn.softmax(tf.matmul(attention_out, W) + b)
+# ----- Without Attention -----
+else:
+    outputs, states = dynamic_rnn(GRUCell(hidden_size), inputs=batch_embedded, dtype=tf.float32)
+    W = tf.Variable(tf.zeros([hidden_size, N_CLASSES]))
+    b = tf.Variable(tf.zeros([N_CLASSES]))
 
-#  ----------
+    y = tf.matmul(tf.reshape(outputs, [-1, hidden_size]), W) + b
 
 # loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y))
 loss = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]))
