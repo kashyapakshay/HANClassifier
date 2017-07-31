@@ -106,15 +106,13 @@ with tf.Session() as sess:
         n_batches = total_size / batch_size
 
         for i_batch in range(n_batches):
-            print 'Batch %d\n' % i_batch
-
             start_index = i_batch * batch_size
             end_index = start_index + batch_size
 
             x_batch, y_batch = x_train[start_index: end_index], y_train[start_index: end_index]
 
             if i_batch % 10 == 0:
-                print '%d Loss: %f' % (i, sess.run(loss, feed_dict={x: x_batch, y_: y_batch}))
+                print 'Batch %d | Loss: %f' % (i_batch, sess.run(loss, feed_dict={x: x_batch, y_: y_batch}))
 
             sess.run(trainer, feed_dict={x: x_batch, y_: y_batch})
 
