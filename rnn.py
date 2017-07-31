@@ -91,7 +91,7 @@ rnn_cell = GRUCell(hidden_size)
 # ----- With Attention -----
 
 # Bi-Directional GRU Cells
-outputs, states = bi_rnn(rnn_cell, rnn_cell, inputs=batch_embedded, dtype=tf.float32)
+outputs, states = bi_rnn(GRUCell(hidden_size), GRUCell(hidden_size), inputs=batch_embedded, dtype=tf.float32)
 
 # + Attention Layer +
 attention_out = attention(outputs, attention_size)
@@ -99,10 +99,10 @@ attention_out = attention(outputs, attention_size)
 W = tf.Variable(tf.zeros([attention_out.get_shape()[1].value, N_CLASSES]))
 b = tf.Variable(tf.zeros([N_CLASSES]))
 
-y = tf.matmul(attention_out, W) + b
+y = tf.nn.softmax(tf.matmul(attention_out, W) + b)
 
-loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y))
-# loss = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]))
+# loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y))
+loss = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]))
 trainer = tf.train.AdamOptimizer(1e-4).minimize(loss)
 
 correct_answer = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
