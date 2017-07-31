@@ -127,8 +127,8 @@ with tf.Session() as sess:
         print '=== Epoch %d ===\n' % epoch
 
         for i_batch in range(n_batches):
-            start_index = i_batch * batch_size
-            end_index = start_index + batch_size
+            start_index = i_batch * BATCH_SIZE
+            end_index = start_index + BATCH_SIZE
 
             x_batch, y_batch = x_train[start_index: end_index], y_train[start_index: end_index]
 
