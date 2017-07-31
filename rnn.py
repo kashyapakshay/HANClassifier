@@ -38,11 +38,12 @@ def attention(inputs, ATTENTION_SIZE):
 
 # ----- Pre-process -----
 # MAX_LEN = max(len(max(x_train, key=len)), len(max(x_test, key=len)))
-MAX_LEN = 10
+MAX_LEN = 200
 N_CLASSES = 46
 VOCAB_SIZE = get_vocabulary_size(x_train)
 ATTENTION_SIZE = 50
 HIDDEN_SIZE = 100
+EPOCHS = 5
 
 x_train = pad_sequences(x_train, MAX_LEN)
 x_test = pad_sequences(x_test, MAX_LEN)
@@ -117,7 +118,7 @@ with tf.Session() as sess:
     batch_size = 100
     n_batches = total_size / batch_size
 
-    for epoch in range(10):
+    for epoch in range(EPOCHS):
         print '=== Epoch %d ===\n' % epoch
 
         for i_batch in range(n_batches):
