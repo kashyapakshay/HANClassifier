@@ -49,6 +49,8 @@ x_test = pad_sequences(x_test, MAX_LEN)
 y_train = np.array([one_hot(y, N_CLASSES) for y in y_train], dtype='f')
 y_test  = np.array([one_hot(y, N_CLASSES) for y in y_test], dtype='f')
 
+sequence_lengths = tf.placeholder(tf.int32, [None])
+
 x = tf.placeholder(tf.int32, [None, MAX_LEN])
 y_ = tf.placeholder(tf.float32, [None, N_CLASSES])
 
@@ -63,7 +65,7 @@ if len(sys.argv) > 1 and sys.argv[1] == '--attention':
     outputs, states = bidirectional_dynamic_rnn(
         GRUCell(HIDDEN_SIZE),
         GRUCell(HIDDEN_SIZE),
-        inputs=batch_embedded, dtype=tf.float32
+        inputs=batch_embedded, sequence_length=sequence_lengths, dtype=tf.float32
     )
 
     # + Attention Layer +
@@ -76,7 +78,11 @@ if len(sys.argv) > 1 and sys.argv[1] == '--attention':
 
 # ----- Without Attention -----
 else:
-    outputs, states = dynamic_rnn(GRUCell(HIDDEN_SIZE), inputs=batch_embedded, dtype=tf.float32)
+    outputs, states = dynamic_rnn(
+        GRUCell(HIDDEN_SIZE),
+        inputs=batch_embedded, sequence_length=sequence_lengths, dtype=tf.float32
+    )
+
     out_shape = outputs.get_shape().as_list()
 
     W = tf.Variable(tf.zeros([out_shape[2] * out_shape[1], N_CLASSES]))
@@ -110,10 +116,14 @@ with tf.Session() as sess:
 
             x_batch, y_batch = x_train[start_index: end_index], y_train[start_index: end_index]
 
-            if i_batch % 10 == 0:
-                print 'Batch %d | Loss: %f' % (i_batch, sess.run(loss, feed_dict={x: x_batch, y_: y_batch}))
+            sequence_lengths = [len(x) for x in x_batch]
 
-            sess.run(trainer, feed_dict={x: x_batch, y_: y_batch})
+            if i_batch % 10 == 0:
+                print 'Batch %d | Loss: %f' % (i_batch, sess.run(loss,
+                    feed_dict={x: x_batch, y_: y_batch, sequence_lengths: sequence_lengths}))
+
+            sess.run(trainer,
+                feed_dict={x: x_batch, y_: y_batch, sequence_lengths: sequence_lengths})
 
         print
 
