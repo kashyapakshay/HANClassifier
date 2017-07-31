@@ -10,17 +10,6 @@ from keras.datasets import imdb, reuters
 
 from utils import *
 
-def make_rfp_dataset():
-    paragraphs = load(open('data/new_paragraphs_with_sentences_with_labels.json', 'r'))
-    filenames = ['data/html/RFPs/Cleansed/Greengoat/Greengoat  IT Managed Services RFP 2016.html']
-
-    for filename in filenames:
-        print '===== %s =====\n' % filename
-
-        for para in paragraphs[filename]:
-            for sentence in para['paragraph']:
-                yield filename, sentence
-
 def attention(inputs, attention_size):
     # Concatenate Bi-RNN outputs.
     inputs = tf.concat(inputs, 2)
