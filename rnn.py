@@ -73,7 +73,7 @@ if len(sys.argv) > 1 and sys.argv[1] == '--attention':
     # + Attention Layer +
     attention_out = attention(outputs, ATTENTION_SIZE)
 
-    out_shape = outputs.get_shape().as_list()
+    out_shape = attention_out.get_shape().as_list()
 
     W = tf.Variable(tf.zeros([out_shape[1], N_CLASSES]))
     b = tf.Variable(tf.zeros([N_CLASSES]))
